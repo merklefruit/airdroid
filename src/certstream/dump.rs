@@ -1,3 +1,5 @@
+// Ported from: https://github.com/hrbrmstr/certstream-rust/tree/batman
+
 use rocksdb::{IteratorMode, Options, DB};
 use std::collections::HashMap;
 
