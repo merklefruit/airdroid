@@ -9,6 +9,7 @@ pub fn dump(db: Arc<DB>) -> Result<HashMap<String, String>> {
 
     for (key, value) in iter {
         let domain = String::from_utf8(key.to_vec()).unwrap();
+        log::debug!("Domain: {}", domain);
 
         if constants::is_reserved_key(&domain) {
             continue;

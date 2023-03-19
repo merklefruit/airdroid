@@ -23,6 +23,7 @@ dependencies = [
  "itertools 0.10.5",
  "log",
  "pretty_env_logger",
+ "regex",
  "rocksdb",
  "serde",
  "serde_derive",

@@ -4,6 +4,7 @@ mod bot;
 mod certstream;
 mod error;
 mod prelude;
+mod utils;
 
 use crate::{bot::Command, prelude::*};
 use rocksdb::{Options, DB};
@@ -25,14 +26,6 @@ async fn main() -> Result<()> {
     let bot = Bot::from_env();
     let db = Arc::new(DB::open(&options, constants::ROCKSDB_PATH).unwrap());
 
-    let mut keywords_to_track = db
-        .get(constants::TRACKED_KEYWORDS_KEY)?
-        .map(|x| String::from_utf8(x.to_vec()).unwrap())
-        .unwrap_or_default()
-        .split(',')
-        .map(|x| x.to_string())
-        .collect::<Vec<String>>();
-
     let handler = Update::filter_message().branch(
         dptree::entry()
             .filter_command::<Command>()
@@ -53,7 +46,6 @@ async fn main() -> Result<()> {
     // execute these tasks concurrently:
     join!(
         // 1. run the bot in the background to handle chat commands
-        // bot::Command::repl(bot.clone(), bot::answer),
         dispatcher.dispatch(),
         // 2. send automatic updates to the group chat when a new domain is found
         bot::send_update(
@@ -63,7 +55,7 @@ async fn main() -> Result<()> {
             constants::UPDATE_INTERVAL
         ),
         // 3. scrape certstream for new domains and add them to the db
-        certstream::scrape(db, &keywords_to_track)
+        certstream::scrape(db)
     );
 
     Ok(())

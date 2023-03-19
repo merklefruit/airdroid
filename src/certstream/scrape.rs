@@ -2,10 +2,11 @@
 // Modified to filter specific domains for a telegram bot.
 
 use super::json_types;
-use crate::prelude::*;
+use crate::{prelude::*, utils};
 use chrono::prelude::*;
 use futures_util::StreamExt;
 use itertools::Itertools;
+use regex::Regex;
 use rocksdb::{Options, DB};
 use std::{
     process,
@@ -19,7 +20,7 @@ macro_rules! assert_types {
   ($($var:ident : $ty:ty),*) => { $(let _: & $ty = & $var;)* }
 }
 
-pub async fn scrape(db: Arc<DB>, keywords_to_track: &[String]) -> Result<()> {
+pub async fn scrape(db: Arc<DB>) -> Result<()> {
     ctrlc::set_handler(move || {
         process::exit(0x0000);
     })
@@ -28,6 +29,11 @@ pub async fn scrape(db: Arc<DB>, keywords_to_track: &[String]) -> Result<()> {
     loop {
         // server is likely to drop connections
         let certstream_url = url::Url::parse(constants::CERTSTREAM_URL).unwrap(); // we need an actual Url type
+
+        let mut keywords_to_track =
+            utils::parse_csv_to_vec(db.get(constants::TRACKED_KEYWORDS_KEY)?);
+
+        let re = Regex::new(&keywords_to_track.join("|")).unwrap();
 
         // connect to CertStream's encrypted websocket interface
         let (wss_stream, _response) = connect_async(certstream_url)
@@ -57,12 +63,12 @@ pub async fn scrape(db: Arc<DB>, keywords_to_track: &[String]) -> Result<()> {
                                     for dom in
                                         record.data.leaf_cert.all_domains.into_iter().unique()
                                     {
-                                        // CUSTOM: only add domains that match a specific pattern
+                                        // Only add domains that match a specific pattern
                                         let lowercase_dom = dom.to_ascii_lowercase();
 
-                                        if keywords_to_track.contains(&lowercase_dom) {
-                                            // CertStream doms shld already be lowercase but making it explicit
-                                            // CUSTOM: add timestamp as "last-seen-at" value to current timestamp
+                                        if re.is_match(&lowercase_dom) {
+                                            log::info!("Found new domain: {}", lowercase_dom);
+                                            // Add timestamp as "last-seen-at" value to current timestamp
                                             db.put(lowercase_dom, Utc::now().to_string()).unwrap();
                                         }
                                     }
@@ -85,7 +91,7 @@ pub async fn scrape(db: Arc<DB>, keywords_to_track: &[String]) -> Result<()> {
         read_future.await;
 
         eprintln!(
-            "Server disconnected…waiting {} seconds and retrying…",
+            "Server disconnected… waiting {} seconds and retrying…",
             constants::WAIT_AFTER_DISCONNECT
         );
 
