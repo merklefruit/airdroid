@@ -3,12 +3,15 @@
 
 use super::json_types;
 use crate::prelude::*;
-
 use chrono::prelude::*;
 use futures_util::StreamExt;
 use itertools::Itertools;
 use rocksdb::{Options, DB};
-use std::{process, sync::Mutex, thread, time};
+use std::{
+    process,
+    sync::{Arc, Mutex},
+    thread, time,
+};
 use tokio_tungstenite::connect_async;
 
 const CERTSTREAM_URL: &'static str = "wss://certstream.calidog.io/";
@@ -19,7 +22,7 @@ macro_rules! assert_types {
   ($($var:ident : $ty:ty),*) => { $(let _: & $ty = & $var;)* }
 }
 
-pub async fn scrape(db: Arc<DB>, domains_list: Mutex<Vec<String>>) -> Result<()> {
+pub async fn scrape(db: Arc<DB>, keywords_to_track: &Vec<String>) -> Result<()> {
     ctrlc::set_handler(move || {
         process::exit(0x0000);
     })
@@ -27,15 +30,6 @@ pub async fn scrape(db: Arc<DB>, domains_list: Mutex<Vec<String>>) -> Result<()>
 
     loop {
         // server is likely to drop connections
-
-        // Setup RocksDB for writing
-        let mut options = Options::default();
-        options.set_error_if_exists(false);
-        options.create_if_missing(true);
-        options.create_missing_column_families(true);
-
-        // let db = DB::open(&options, rocksdb_path.to_owned())?;
-
         let certstream_url = url::Url::parse(CERTSTREAM_URL).unwrap(); // we need an actual Url type
 
         // connect to CertStream's encrypted websocket interface
@@ -69,7 +63,7 @@ pub async fn scrape(db: Arc<DB>, domains_list: Mutex<Vec<String>>) -> Result<()>
                                         // CUSTOM: only add domains that match a specific pattern
                                         let lowercase_dom = dom.to_ascii_lowercase();
 
-                                        if domains_list.lock().unwrap().contains(&lowercase_dom) {
+                                        if keywords_to_track.contains(&lowercase_dom) {
                                             // CertStream doms shld already be lowercase but making it explicit
                                             // CUSTOM: add timestamp as "last-seen-at" value to current timestamp
                                             db.put(lowercase_dom, Utc::now().to_string()).unwrap();
@@ -97,9 +91,6 @@ pub async fn scrape(db: Arc<DB>, domains_list: Mutex<Vec<String>>) -> Result<()>
             "Server disconnected…waiting {} seconds and retrying…",
             WAIT_AFTER_DISCONNECT
         );
-
-        // kill the DB object and re-open since it's a fast operation
-        let _ = DB::destroy(&Options::default(), rocksdb_path.to_owned());
 
         // wait for a bit to be kind to the server
         thread::sleep(time::Duration::from_secs(WAIT_AFTER_DISCONNECT));

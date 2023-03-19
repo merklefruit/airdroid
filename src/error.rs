@@ -1,6 +1,3 @@
-use std::convert::Infallible;
-use teloxide::dispatching::dialogue::SqliteStorageError;
-
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Generic {0}")]
@@ -14,9 +11,6 @@ pub enum Error {
 
     #[error("RocksDB error: {0}")]
     RocksDB(#[from] rocksdb::Error),
-
-    #[error("Sqlite error: {0}")]
-    Sqlite(#[from] SqliteStorageError<Infallible>),
 
     #[error("Teloxide handler error: {0}")]
     TeloxideHandler(#[from] Box<dyn std::error::Error + Send + Sync>),
