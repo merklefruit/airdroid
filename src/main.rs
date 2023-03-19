@@ -9,27 +9,12 @@ mod utils;
 use crate::prelude::*;
 use rocksdb::{Options, DB};
 use std::{sync::Arc, time::Duration};
-use teloxide::{prelude::*, types::Recipient, utils::command::BotCommands};
+use teloxide::prelude::*;
 use tokio::join;
 
 const GROUP_CHAT_ID: &'static str = "-900218105";
-const SQLITE_DB_PATH: &'static str = "db.sqlite";
 const ROCKSDB_PATH: &'static str = "certstream.db";
 const UPDATE_INTERVAL: u64 = 10; // seconds
-
-#[derive(BotCommands, Clone)]
-#[command(
-    rename_rule = "lowercase",
-    description = "These commands are supported:"
-)]
-pub enum Command {
-    #[command(description = "display this text.")]
-    Help,
-    #[command(description = "list tracked domain names.")]
-    Domains,
-    #[command(description = "get the current chat id.")]
-    ChatId,
-}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -51,9 +36,13 @@ async fn main() -> Result<()> {
         .map(|s| s.to_string())
         .collect();
 
+    // execute these tasks concurrently:
     join!(
-        Command::repl(bot.clone(), bot::answer),
+        // 1. run the bot in the background to handle chat commands
+        bot::Command::repl(bot.clone(), bot::answer),
+        // 2. send automatic updates to the group chat when a new domain is found
         bot::send_update(bot.clone(), db.clone(), GROUP_CHAT_ID, UPDATE_INTERVAL),
+        // 3. scrape certstream for new domains and add them to the db
         certstream::scrape(db.clone(), &keywords_to_track)
     );
 

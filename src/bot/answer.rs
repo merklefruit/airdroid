@@ -1,5 +1,5 @@
+use super::Command;
 use crate::prelude::*;
-use crate::Command;
 use teloxide::{prelude::*, utils::command::BotCommands};
 
 pub async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
