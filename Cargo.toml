@@ -5,11 +5,12 @@ edition = "2021"
 
 [dependencies]
 tokio = { version =  "1.8", features = ["rt-multi-thread", "macros"] }
-teloxide = { version = "0.12", features = ["macros"] }
+teloxide = { version = "0.12", features = ["macros", "sqlite-storage"] }
 pretty_env_logger = "0.4"
 thiserror = "1.0.38"
 dotenv = "0.15.0"
 log = "0.4"
+serde = "1.0.157"
 
 [dev-dependencies]
 anyhow = "1.0.51"
