@@ -14,15 +14,12 @@ use std::{
 };
 use tokio_tungstenite::connect_async;
 
-const CERTSTREAM_URL: &'static str = "wss://certstream.calidog.io/";
-const WAIT_AFTER_DISCONNECT: u64 = 5; // seconds
-
 // in the deserialization part, the type of the returnd, parsed JSON gets wonky
 macro_rules! assert_types {
   ($($var:ident : $ty:ty),*) => { $(let _: & $ty = & $var;)* }
 }
 
-pub async fn scrape(db: Arc<DB>, keywords_to_track: &Vec<String>) -> Result<()> {
+pub async fn scrape(db: Arc<DB>, keywords_to_track: &[String]) -> Result<()> {
     ctrlc::set_handler(move || {
         process::exit(0x0000);
     })
@@ -30,7 +27,7 @@ pub async fn scrape(db: Arc<DB>, keywords_to_track: &Vec<String>) -> Result<()> 
 
     loop {
         // server is likely to drop connections
-        let certstream_url = url::Url::parse(CERTSTREAM_URL).unwrap(); // we need an actual Url type
+        let certstream_url = url::Url::parse(constants::CERTSTREAM_URL).unwrap(); // we need an actual Url type
 
         // connect to CertStream's encrypted websocket interface
         let (wss_stream, _response) = connect_async(certstream_url)
@@ -48,9 +45,9 @@ pub async fn scrape(db: Arc<DB>, keywords_to_track: &Vec<String>) -> Result<()> 
 
                     if let Ok(json_data) = msg.to_text() {
                         // did the bytes convert to text ok?
-                        if json_data.len() > 0 {
+                        if !json_data.is_empty() {
                             // do we actually have semi-valid JSON?
-                            match serde_json::from_str(&json_data) {
+                            match serde_json::from_str(json_data) {
                                 // if deserialization works
                                 Ok(record) => {
                                     // then derserialize JSON
@@ -89,11 +86,11 @@ pub async fn scrape(db: Arc<DB>, keywords_to_track: &Vec<String>) -> Result<()> 
 
         eprintln!(
             "Server disconnected…waiting {} seconds and retrying…",
-            WAIT_AFTER_DISCONNECT
+            constants::WAIT_AFTER_DISCONNECT
         );
 
         // wait for a bit to be kind to the server
-        thread::sleep(time::Duration::from_secs(WAIT_AFTER_DISCONNECT));
+        thread::sleep(time::Duration::from_secs(constants::WAIT_AFTER_DISCONNECT));
     }
 
     Ok(())
