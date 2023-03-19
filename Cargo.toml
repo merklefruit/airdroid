@@ -1,16 +1,25 @@
 [package]
-name = "starter"
+name = "airdroid"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 tokio = { version =  "1.8", features = ["rt-multi-thread", "macros"] }
-teloxide = { version = "0.12", features = ["macros", "sqlite-storage"] }
+tokio-tungstenite = { version = "0.17.1", features = ["native-tls"] }
+teloxide = { version = "0.12", features = ["macros"] }
+rocksdb = { version = "0.18.0", features = ["lz4"] }
 pretty_env_logger = "0.4"
+serde_derive = "1.0.157"
+futures-util = "0.3.27"
+serde_json = "1.0.94"
+itertools = "0.10.3"
 thiserror = "1.0.38"
 dotenv = "0.15.0"
-log = "0.4"
+chrono = "0.4.24"
 serde = "1.0.157"
+ctrlc = "3.2.5"
+url = "2.2.2"
+log = "0.4"
 
 [dev-dependencies]
 anyhow = "1.0.51"

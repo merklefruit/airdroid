@@ -12,6 +12,9 @@ pub enum Error {
     #[error("Teloxide error: {0}")]
     Teloxide(#[from] teloxide::RequestError),
 
+    #[error("RocksDB error: {0}")]
+    RocksDB(#[from] rocksdb::Error),
+
     #[error("Sqlite error: {0}")]
     Sqlite(#[from] SqliteStorageError<Infallible>),
 
