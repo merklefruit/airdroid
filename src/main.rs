@@ -5,7 +5,7 @@ mod certstream;
 mod error;
 mod prelude;
 
-use crate::prelude::*;
+use crate::{bot::Command, prelude::*};
 use rocksdb::{Options, DB};
 use std::{sync::Arc, time::Duration};
 use teloxide::prelude::*;
@@ -33,13 +33,31 @@ async fn main() -> Result<()> {
         .map(|x| x.to_string())
         .collect::<Vec<String>>();
 
+    let handler = Update::filter_message().branch(
+        dptree::entry()
+            .filter_command::<Command>()
+            .endpoint(bot::answer),
+    );
+
+    let mut dispatcher = Dispatcher::builder(bot.clone(), handler)
+        .dependencies(dptree::deps![db.clone()])
+        .default_handler(|upd| async move {
+            log::warn!("Unhandled update: {:?}", upd);
+        })
+        .error_handler(LoggingErrorHandler::with_custom_text(
+            "An error has occurred in the dispatcher",
+        ))
+        .enable_ctrlc_handler()
+        .build();
+
     // execute these tasks concurrently:
     join!(
         // 1. run the bot in the background to handle chat commands
-        bot::Command::repl(bot.clone(), bot::answer),
+        // bot::Command::repl(bot.clone(), bot::answer),
+        dispatcher.dispatch(),
         // 2. send automatic updates to the group chat when a new domain is found
         bot::send_update(
-            bot.clone(),
+            bot,
             db.clone(),
             constants::GROUP_CHAT_ID,
             constants::UPDATE_INTERVAL
