@@ -6,8 +6,8 @@ mod utils;
 
 use crate::{bot::Command, prelude::*};
 use rocksdb::{Options, DB};
-use std::sync::{Arc, Mutex};
-use teloxide::{dptree::di::Injectable, prelude::*};
+use std::sync::Arc;
+use teloxide::prelude::*;
 use tokio::join;
 
 #[tokio::main]

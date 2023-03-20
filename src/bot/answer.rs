@@ -1,7 +1,7 @@
 use super::Command;
 use crate::prelude::*;
 use rocksdb::DB;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use teloxide::{prelude::*, utils::command::BotCommands};
 
 pub async fn answer(db: Arc<DB>, bot: Bot, msg: Message, cmd: Command) -> Result<()> {

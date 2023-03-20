@@ -1,9 +1,6 @@
 use crate::prelude::*;
 use rocksdb::{IteratorMode, DB};
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 
 pub fn dump(db: &Arc<DB>) -> Result<HashMap<String, String>> {
     let iter = db.iterator(IteratorMode::Start); // Always iterates forward

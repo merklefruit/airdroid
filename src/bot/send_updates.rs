@@ -1,9 +1,6 @@
 use crate::{certstream, prelude::*, utils};
 use rocksdb::DB;
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 use teloxide::{prelude::*, types::Recipient};
 
 pub async fn send_updates(bot: Bot, db: Arc<DB>) -> Result<()> {
@@ -19,7 +16,7 @@ pub async fn send_updates(bot: Bot, db: Arc<DB>) -> Result<()> {
 
             log::debug!("Sending message: {}", text);
             // todo: add ability to send to multiple chats via a reserved key-value pair
-            bot.send_message(Recipient::from(UserId(constants::GROUP_CHAT_ID)), text)
+            bot.send_message(Recipient::from(ChatId(constants::GROUP_CHAT_ID)), text)
                 .await?;
         } else {
             log::debug!(

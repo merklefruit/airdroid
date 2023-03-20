@@ -14,7 +14,7 @@ pub mod constants {
     pub const ROCKSDB_PATH: &str = "certstream.db";
 
     /// Telegram chat ID to receive updates
-    pub const GROUP_CHAT_ID: u64 = 80215184; // "-900218105";
+    pub const GROUP_CHAT_ID: i64 = -900218105;
 
     /// Interval to send updates to the chat (seconds)
     pub const UPDATE_INTERVAL: u64 = 5;

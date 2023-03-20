@@ -11,7 +11,7 @@ use std::{
     process,
     sync::{
         atomic::{AtomicU64, Ordering::Relaxed},
-        Arc, Mutex,
+        Arc,
     },
     thread, time,
 };
