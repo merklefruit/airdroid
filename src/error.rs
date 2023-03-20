@@ -1,8 +1,5 @@
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Generic {0}")]
-    Generic(String), // TODO: Remove for release
-
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
 

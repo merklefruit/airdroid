@@ -1,7 +1,7 @@
 use super::Command;
 use crate::prelude::*;
 use rocksdb::DB;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use teloxide::{prelude::*, utils::command::BotCommands};
 
 pub async fn answer(db: Arc<DB>, bot: Bot, msg: Message, cmd: Command) -> Result<()> {
@@ -13,7 +13,7 @@ pub async fn answer(db: Arc<DB>, bot: Bot, msg: Message, cmd: Command) -> Result
         }
 
         // Send a message with the list of currently tracked keywords.
-        Command::Domains => {
+        Command::Keywords => {
             bot.send_message(
                 msg.chat.id,
                 db.get(constants::TRACKED_KEYWORDS_KEY)?
@@ -27,13 +27,17 @@ pub async fn answer(db: Arc<DB>, bot: Bot, msg: Message, cmd: Command) -> Result
         Command::Track(domain) => {
             let mut domains = db.get(constants::TRACKED_KEYWORDS_KEY)?.unwrap_or_default();
 
-            // Add a comma if there are already domains in the list
-            let should_add_comma = if !domains.is_empty() { "," } else { "" };
-            domains.extend_from_slice(f!("{}{}", should_add_comma, domain).as_bytes());
+            domains.extend_from_slice(
+                f!("{}{}", if !domains.is_empty() { "," } else { "" }, domain).as_bytes(),
+            );
+
             db.put(constants::TRACKED_KEYWORDS_KEY, domains)?;
 
-            bot.send_message(msg.chat.id, "Added domain to tracking list.")
-                .await?
+            bot.send_message(
+                msg.chat.id,
+                f!("Added \"{domain}\" to the tracked keywords."),
+            )
+            .await?
         }
 
         // Send a message with the current chat id.

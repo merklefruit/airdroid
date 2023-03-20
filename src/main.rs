@@ -1,5 +1,3 @@
-#![allow(unused)] // TODO: remove for release
-
 mod bot;
 mod certstream;
 mod error;
@@ -8,14 +6,15 @@ mod utils;
 
 use crate::{bot::Command, prelude::*};
 use rocksdb::{Options, DB};
-use std::{sync::Arc, time::Duration};
-use teloxide::prelude::*;
+use std::sync::{Arc, Mutex};
+use teloxide::{dptree::di::Injectable, prelude::*};
 use tokio::join;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     pretty_env_logger::init();
+
     log::info!("Starting bot...");
 
     let mut options = Options::default();
@@ -44,18 +43,13 @@ async fn main() -> Result<()> {
         .build();
 
     // execute these tasks concurrently:
-    join!(
+    let _ = join!(
         // 1. run the bot in the background to handle chat commands
         dispatcher.dispatch(),
         // 2. send automatic updates to the group chat when a new domain is found
-        bot::send_update(
-            bot,
-            db.clone(),
-            constants::GROUP_CHAT_ID,
-            constants::UPDATE_INTERVAL
-        ),
+        tokio::spawn(bot::send_updates(bot, db.clone())),
         // 3. scrape certstream for new domains and add them to the db
-        certstream::scrape(db)
+        tokio::spawn(certstream::scrape(db.clone()))
     );
 
     Ok(())

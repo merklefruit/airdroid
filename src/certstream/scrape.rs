@@ -1,5 +1,4 @@
-// Ported from: https://github.com/hrbrmstr/certstream-rust/tree/batman
-// Modified to filter specific domains for a telegram bot.
+// Initially Ported from: https://github.com/hrbrmstr/certstream-rust/tree/batman
 
 use super::json_types;
 use crate::{prelude::*, utils};
@@ -7,10 +6,13 @@ use chrono::prelude::*;
 use futures_util::StreamExt;
 use itertools::Itertools;
 use regex::Regex;
-use rocksdb::{Options, DB};
+use rocksdb::DB;
 use std::{
     process,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicU64, Ordering::Relaxed},
+        Arc, Mutex,
+    },
     thread, time,
 };
 use tokio_tungstenite::connect_async;
@@ -26,50 +28,59 @@ pub async fn scrape(db: Arc<DB>) -> Result<()> {
     })
     .expect("Error setting Ctrl-C handler");
 
+    let count_skipped = AtomicU64::new(0);
+
     loop {
         // server is likely to drop connections
-        let certstream_url = url::Url::parse(constants::CERTSTREAM_URL).unwrap(); // we need an actual Url type
+        let certstream_url = url::Url::parse(constants::CERTSTREAM_URL).unwrap();
 
-        let mut keywords_to_track =
-            utils::parse_csv_to_vec(db.get(constants::TRACKED_KEYWORDS_KEY)?);
+        let keywords_to_track = utils::parse_csv_to_vec(db.get(constants::TRACKED_KEYWORDS_KEY)?);
+
+        if keywords_to_track.is_empty() {
+            log::debug!("No keywords to track, sleeping for 5s");
+            thread::sleep(time::Duration::from_secs(5));
+            continue;
+        }
+
+        log::debug!("Tracking keywords: {:?}", keywords_to_track);
 
         let re = Regex::new(&keywords_to_track.join("|")).unwrap();
 
         // connect to CertStream's encrypted websocket interface
         let (wss_stream, _response) = connect_async(certstream_url)
             .await
-            .expect("Failed to connect");
+            .expect("Failed to connect to CertStream WS");
 
         // the WebSocketStrem has sink/stream (read/srite) components; this is how we get to them
         let (mut _write, read) = wss_stream.split();
 
-        // process messages as they come in
         let read_future = read.for_each(|message| async {
             match message {
                 Ok(msg) => {
-                    // we have the websockets message bytes as a str
-
                     if let Ok(json_data) = msg.to_text() {
-                        // did the bytes convert to text ok?
                         if !json_data.is_empty() {
-                            // do we actually have semi-valid JSON?
                             match serde_json::from_str(json_data) {
-                                // if deserialization works
                                 Ok(record) => {
-                                    // then derserialize JSON
-
                                     assert_types! { record: json_types::CertStream }
 
                                     for dom in
                                         record.data.leaf_cert.all_domains.into_iter().unique()
                                     {
-                                        // Only add domains that match a specific pattern
                                         let lowercase_dom = dom.to_ascii_lowercase();
+
+                                        count_skipped.fetch_add(1, Relaxed);
 
                                         if re.is_match(&lowercase_dom) {
                                             log::info!("Found new domain: {}", lowercase_dom);
                                             // Add timestamp as "last-seen-at" value to current timestamp
                                             db.put(lowercase_dom, Utc::now().to_string()).unwrap();
+                                        } else {
+                                            if count_skipped.load(Relaxed) % 1000 == 0 {
+                                                log::debug!(
+                                                    "Skipped {} domains",
+                                                    count_skipped.load(Relaxed)
+                                                );
+                                            }
                                         }
                                     }
                                 }
@@ -90,7 +101,7 @@ pub async fn scrape(db: Arc<DB>) -> Result<()> {
 
         read_future.await;
 
-        eprintln!(
+        log::error!(
             "Server disconnected… waiting {} seconds and retrying…",
             constants::WAIT_AFTER_DISCONNECT
         );
@@ -98,6 +109,4 @@ pub async fn scrape(db: Arc<DB>) -> Result<()> {
         // wait for a bit to be kind to the server
         thread::sleep(time::Duration::from_secs(constants::WAIT_AFTER_DISCONNECT));
     }
-
-    Ok(())
 }
