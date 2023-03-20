@@ -7,7 +7,7 @@ pub async fn send_updates(bot: Bot, db: Arc<DB>) -> Result<()> {
     loop {
         log::debug!("Checking for new domains...");
 
-        if let Some(new_domains) = check_for_new_domains(&db)? {
+        if let Some(new_domains) = check_for_new_domains(db.clone())? {
             let text = f!(
                 "Found new domain{}: {}",
                 if new_domains.len() > 1 { "s" } else { "" },
@@ -29,7 +29,7 @@ pub async fn send_updates(bot: Bot, db: Arc<DB>) -> Result<()> {
     }
 }
 
-fn check_for_new_domains(db: &Arc<DB>) -> Result<Option<Vec<String>>> {
+fn check_for_new_domains(db: Arc<DB>) -> Result<Option<Vec<String>>> {
     let known_domains = utils::parse_csv_to_vec(db.get(constants::KNOWN_DOMAINS_KEY)?);
     log::debug!("Previously known domains: {:?}", known_domains);
 

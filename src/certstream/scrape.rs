@@ -74,13 +74,11 @@ pub async fn scrape(db: Arc<DB>) -> Result<()> {
                                             log::info!("Found new domain: {}", lowercase_dom);
                                             // Add timestamp as "last-seen-at" value to current timestamp
                                             db.put(lowercase_dom, Utc::now().to_string()).unwrap();
-                                        } else {
-                                            if count_skipped.load(Relaxed) % 1000 == 0 {
-                                                log::debug!(
-                                                    "Skipped {} domains",
-                                                    count_skipped.load(Relaxed)
-                                                );
-                                            }
+                                        } else if count_skipped.load(Relaxed) % 1000 == 0 {
+                                            log::debug!(
+                                                "Skipped {} domains",
+                                                count_skipped.load(Relaxed)
+                                            );
                                         }
                                     }
                                 }
