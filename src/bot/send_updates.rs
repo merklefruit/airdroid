@@ -14,8 +14,7 @@ pub async fn send_updates(bot: Bot, db: Arc<DB>) -> Result<()> {
                 new_domains.join(", ")
             );
 
-            // todo: add ability to send to multiple chats via a reserved key-value pair
-            bot.send_message(constants::GROUP_CHAT_ID.to_string(), text)
+            bot.send_message(constants::TG_CHANNEL_ID.to_string(), text)
                 .await?;
         } else {
             log::debug!(
