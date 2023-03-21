@@ -14,8 +14,6 @@ pub fn dump(db: &Arc<DB>) -> Result<HashMap<String, String>> {
             continue;
         }
 
-        log::debug!("Domain: {}", domain);
-
         let timestamp = String::from_utf8(value.to_vec()).unwrap();
 
         domains_list.insert(domain, timestamp);

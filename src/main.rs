@@ -8,7 +8,6 @@ use crate::{bot::Command, prelude::*};
 use rocksdb::{Options, DB};
 use std::sync::Arc;
 use teloxide::prelude::*;
-use tokio::join;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -16,7 +15,13 @@ async fn main() -> Result<()> {
     pretty_env_logger::init();
 
     log::info!("Starting bot...");
+    run().await?;
+    log::info!("Bot stopped.");
 
+    Ok(())
+}
+
+async fn run() -> Result<()> {
     let mut options = Options::default();
     options.set_error_if_exists(false);
     options.create_if_missing(true);
@@ -42,15 +47,10 @@ async fn main() -> Result<()> {
         .enable_ctrlc_handler()
         .build();
 
-    // execute these tasks concurrently:
-    let _ = join!(
-        // 1. run the bot in the background to handle chat commands
-        dispatcher.dispatch(),
-        // 2. send automatic updates to the group chat when a new domain is found
-        tokio::spawn(bot::send_updates(bot, db.clone())),
-        // 3. scrape certstream for new domains and add them to the db
-        tokio::spawn(certstream::scrape(db.clone()))
-    );
+    tokio::spawn(bot::send_updates(bot, db.clone()));
+    tokio::spawn(certstream::scrape(db.clone()));
+
+    dispatcher.dispatch().await;
 
     Ok(())
 }

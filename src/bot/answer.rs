@@ -41,7 +41,10 @@ pub async fn answer(db: Arc<DB>, bot: Bot, msg: Message, cmd: Command) -> Result
         }
 
         // Send a message with the current chat id.
-        Command::ChatId => bot.send_message(msg.chat.id, f!("{}", msg.chat.id)).await?,
+        Command::ChatId => {
+            bot.send_message(msg.chat.id, f!("{}", msg.chat.id.0))
+                .await?
+        }
     };
 
     Ok(())

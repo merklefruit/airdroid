@@ -14,16 +14,16 @@ pub mod constants {
     pub const ROCKSDB_PATH: &str = "certstream.db";
 
     /// Telegram chat ID to receive updates
-    pub const GROUP_CHAT_ID: i64 = -900218105;
+    pub const GROUP_CHAT_ID: i64 = -1001553262061; // 80215184;
 
     /// Interval to send updates to the chat (seconds)
-    pub const UPDATE_INTERVAL: u64 = 5;
+    pub const UPDATE_INTERVAL: u64 = 30;
 
     /// CertStream URL
     pub const CERTSTREAM_URL: &str = "wss://certstream.calidog.io/";
 
     /// Interval to wait after a websocket connection is dropped (seconds)
-    pub const WAIT_AFTER_DISCONNECT: u64 = 3;
+    pub const WAIT_AFTER_DISCONNECT: u64 = 4;
 
     pub fn is_reserved_key(item: &str) -> bool {
         let special_keys = vec![TRACKED_KEYWORDS_KEY, KNOWN_DOMAINS_KEY];
