@@ -14,7 +14,7 @@ pub async fn send_updates(bot: Bot, db: Arc<DB>) -> Result<()> {
                 new_domains.join(", ")
             );
 
-            bot.send_message(constants::TG_CHANNEL_ID.to_string(), text)
+            bot.send_message(std::env::var("TELEGRAM_CHAT_ID").unwrap(), text)
                 .await?;
         } else {
             log::debug!(

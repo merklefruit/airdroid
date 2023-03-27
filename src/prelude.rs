@@ -6,15 +6,12 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub use std::format as f;
 
 pub mod constants {
-    // Special DB keys
+    // Special DB keys that are not domains
     pub const TRACKED_KEYWORDS_KEY: &str = "__tracked_keywords";
     pub const KNOWN_DOMAINS_KEY: &str = "__known_domains";
 
     /// Path to the RocksDB database
     pub const ROCKSDB_PATH: &str = "certstream.db";
-
-    /// Telegram chat ID or channel name to receive updates on
-    pub const TG_CHANNEL_ID: &str = "@airdroidsbotchannel";
 
     /// Interval to send updates to the chat (seconds)
     pub const UPDATE_INTERVAL: u64 = 30;
