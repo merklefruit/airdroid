@@ -20,11 +20,30 @@ The primary flow is composed of three operations that are run concurrently:
 2. A thread is spawned to handle Telegram updates, periodically checking for new domains in the "new domains" list. If any are found, they are checked against the "already-known domains" list to avoid duplicates, and then returned as a Telegram message.
 3. The Teloxide dispatcher is run to handle incoming commands to manage the bot.
 
-Airdroid also uses RocksDB to store the domains list and some Telegram-related data. A DB instance is opened at startup and shared through all the components of the application.
+Airdroid also uses RocksDB to store the domains list and some Telegram-related data. A DB instance is opened at startup and shared through all the components of the bot.
 
 ## How to use
 
-[todo]
+To run airdroid, you need the Rust toolchain installed. You can install it by following the instructions [here](https://www.rust-lang.org/tools/install). Then, you can run the bot by following these steps:
+
+1. Clone the repository and `cd` into it:
+
+   ```shell
+   git clone git@github.com:merklefruit/airdroid.git
+   cd airdroid
+   ```
+
+2. Create a `.env` file and fill it with the env variables required:
+
+   ```shell
+   cp .env.example .env
+   ```
+
+3. Run the bot:
+
+   ```shell
+   cargo run
+   ```
 
 ## Acknowledgements
 
