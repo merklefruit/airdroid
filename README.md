@@ -45,6 +45,8 @@ To run airdroid, you need the Rust toolchain installed. You can install it by fo
    cargo run
    ```
 
+4. Once installed, you can open the telegram chat with the bot and should be able to send the `/help` command to see all the available commands.
+
 ## Acknowledgements
 
 - [CertStream websocket](https://certstream.calidog.io/)
